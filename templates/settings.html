@@ -1,0 +1,165 @@
+{% set page_title = 'Settings' %}
+{% set page_subtitle = 'Konfigurasi komunikasi, alarm, dan aplikasi' %}
+{% set active_page = 'settings' %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BMS &mdash; Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { mono: ['Consolas', 'Courier New', 'monospace'] }
+      }}
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden font-sans">
+
+  {% include 'partials/sidebar.html' %}
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div id="error-banner"
+      class="hidden bg-amber-50 border-b border-amber-200 px-5 py-2
+             flex items-center gap-2 text-sm text-amber-700">
+      <span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+      <span id="error-message">Koneksi ke server bermasalah...</span>
+    </div>
+
+    {% include 'partials/topbar.html' %}
+
+    <main class="flex-1 overflow-y-auto p-5">
+      <div class="grid grid-cols-4 gap-5" x-data="{ cat: 'communication', advOpen: false }">
+        <aside class="col-span-1 bg-white border border-gray-300 rounded p-2">
+          <button @click="cat = 'communication'" :class="cat === 'communication' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'"
+            class="block w-full text-left rounded px-3 py-2 text-sm" type="button">Communication</button>
+          <button @click="cat = 'alarm'" :class="cat === 'alarm' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'"
+            class="block w-full text-left rounded px-3 py-2 text-sm" type="button">Alarm Threshold</button>
+          <button @click="cat = 'database'" :class="cat === 'database' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'"
+            class="block w-full text-left rounded px-3 py-2 text-sm" type="button">Database</button>
+          <button @click="cat = 'application'" :class="cat === 'application' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'"
+            class="block w-full text-left rounded px-3 py-2 text-sm" type="button">Application</button>
+          <button @click="cat = 'battery'" :class="cat === 'battery' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'"
+            class="block w-full text-left rounded px-3 py-2 text-sm" type="button">Battery Info</button>
+          <button @click="cat = 'about'" :class="cat === 'about' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'"
+            class="block w-full text-left rounded px-3 py-2 text-sm" type="button">About</button>
+        </aside>
+
+        <section class="col-span-3 bg-white border border-gray-300 rounded p-6">
+          <div x-show="cat === 'communication'">
+            <div class="setting-row">
+              <label class="setting-label" for="set-com-port">COM Port</label>
+              <div class="flex items-center gap-2">
+                <select id="set-com-port" class="control font-mono"><option>COM3</option><option>COM4</option><option>COM5</option></select>
+                <button onclick="testConnection()" class="border border-gray-300 rounded px-3 py-2 text-sm text-gray-700" type="button">Refresh</button>
+                <span class="text-xs border border-gray-300 rounded px-2 py-1 text-gray-500 font-mono">COM3</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label" for="set-baud">Baud Rate</label>
+              <div class="flex items-center gap-2">
+                <select id="set-baud" class="control font-mono"><option>9600</option><option>19200</option><option>38400</option><option>115200</option></select>
+                <span class="text-xs border border-gray-300 rounded px-2 py-1 text-gray-500 font-mono">9600</span>
+                <span class="text-xs border border-gray-300 rounded px-2 py-1 text-gray-500 font-mono">19200</span>
+                <span class="text-xs border border-gray-300 rounded px-2 py-1 text-gray-500 font-mono">38400</span>
+                <span class="text-xs border border-gray-300 rounded px-2 py-1 text-gray-500 font-mono">115200</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label" for="set-protocol">Protocol</label>
+              <select id="set-protocol" class="control font-mono"><option>Modbus RTU</option><option>CAN Bus</option></select>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label" for="set-refresh">Refresh Interval</label>
+              <div class="flex items-center gap-2">
+                <button onclick="stepNumber('set-refresh', -100)" class="border border-gray-300 rounded px-3 py-2 text-sm" type="button">-</button>
+                <input id="set-refresh" type="number" class="control w-32 font-mono" min="100" step="100">
+                <button onclick="stepNumber('set-refresh', 100)" class="border border-gray-300 rounded px-3 py-2 text-sm" type="button">+</button>
+                <span class="text-xs border border-gray-300 rounded px-2 py-1 text-gray-500">Fast</span>
+                <span class="text-xs border border-gray-300 rounded px-2 py-1 text-gray-500">Normal</span>
+                <span class="text-xs border border-gray-300 rounded px-2 py-1 text-gray-500">Slow</span>
+              </div>
+            </div>
+            <div class="border-b border-gray-50">
+              <button @click="advOpen = !advOpen" class="w-full flex items-center justify-between py-4 text-left" type="button">
+                <span class="text-sm font-semibold text-gray-700">Advanced Serial Settings</span>
+                <span class="text-xs text-gray-400">Data bits &middot; Stop bits &middot; Parity &#9662;</span>
+              </button>
+              <div x-show="advOpen" x-transition class="pb-4 grid grid-cols-3 gap-3">
+                <div><label class="block text-xs text-gray-500 mb-1">Data Bits</label><select id="set-data-bits" class="control font-mono"><option>8</option><option>7</option></select></div>
+                <div><label class="block text-xs text-gray-500 mb-1">Stop Bits</label><select id="set-stop-bits" class="control font-mono"><option>1</option><option>2</option></select></div>
+                <div><label class="block text-xs text-gray-500 mb-1">Parity</label><select id="set-parity" class="control font-mono"><option>None</option><option>Even</option><option>Odd</option></select></div>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label">Test Connection</label>
+              <div class="flex items-center gap-3">
+                <button onclick="testConnection()" class="bg-blue-600 text-white rounded px-3 py-2 text-sm" type="button">Test Connection</button>
+                <span class="hidden items-center gap-2 text-sm text-green-600" id="test-result">
+                  <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                  <span class="font-mono">Connected &middot; 12ms</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div x-show="cat === 'alarm'">
+            <div class="setting-row"><label class="setting-label" for="set-low-soc">Low SOC (%)</label><input id="set-low-soc" type="number" step="0.1" class="control font-mono"></div>
+            <div class="setting-row"><label class="setting-label" for="set-full-charge">Full Charge (%)</label><input id="set-full-charge" type="number" step="0.1" class="control font-mono"></div>
+            <div class="setting-row"><label class="setting-label" for="set-max-temp">Max Temperature (C)</label><input id="set-max-temp" type="number" step="0.1" class="control font-mono"></div>
+            <div class="setting-row"><label class="setting-label" for="set-min-cell">Min Cell Voltage (V)</label><input id="set-min-cell" type="number" step="0.01" class="control font-mono"></div>
+            <div class="setting-row"><label class="setting-label" for="set-max-cell">Max Cell Voltage (V)</label><input id="set-max-cell" type="number" step="0.01" class="control font-mono"></div>
+          </div>
+
+          <div x-show="cat === 'database'">
+            <div class="setting-row"><label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700"><input id="set-auto-save" type="checkbox"> Auto-save</label></div>
+            <div class="setting-row"><label class="setting-label" for="set-save-interval">Save Interval (s)</label><input id="set-save-interval" type="number" class="control font-mono"></div>
+            <div class="setting-row"><label class="setting-label">Backup / Restore</label><div class="flex gap-2"><button class="border border-gray-300 rounded px-3 py-2 text-sm" type="button">Backup</button><button class="border border-gray-300 rounded px-3 py-2 text-sm" type="button">Restore</button></div></div>
+            <div class="setting-row"><label class="setting-label" for="set-export-path">Export Path</label><input id="set-export-path" type="text" class="control font-mono"></div>
+          </div>
+
+          <div x-show="cat === 'application'">
+            <div class="setting-row"><label class="setting-label" for="set-theme">Theme</label><select id="set-theme" class="control"><option>Light</option><option>Dark</option></select></div>
+            <div class="setting-row"><label class="setting-label" for="set-language">Language</label><select id="set-language" class="control"><option value="id">Indonesia</option><option value="en">English</option></select></div>
+            <div class="setting-row"><label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700"><input id="set-startup" type="checkbox"> Start on boot</label></div>
+          </div>
+
+          <div x-show="cat === 'battery'">
+            <div class="space-y-0" id="battery-info"></div>
+          </div>
+
+          <div x-show="cat === 'about'">
+            <div class="text-center mb-6">
+              <div class="text-lg font-bold text-gray-900">BMS Monitor</div>
+              <div class="font-mono text-sm text-gray-400">v1.0.0</div>
+            </div>
+            <div class="space-y-0">
+              <div class="data-row"><span>Company</span><strong>Sumber Rejeki Energy</strong></div>
+              <div class="data-row"><span>Developer</span><strong>Farrel Pramuditya</strong></div>
+              <div class="data-row"><span>Version</span><strong class="font-mono">1.0.0</strong></div>
+              <div class="data-row"><span>License</span><strong>Internal</strong></div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-100 mt-6 pt-4 flex items-center justify-between">
+            <button onclick="loadSettings()" class="text-sm text-gray-500 hover:text-gray-900" type="button">Reset Default</button>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-gray-400">Changes will take effect after saving.</span>
+              <button onclick="loadSettings()" class="text-sm text-gray-500 hover:text-gray-900" type="button">Cancel</button>
+              <button onclick="saveSettings()" class="bg-blue-600 text-white rounded px-4 py-2 text-sm" type="button">Save Settings</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/settings.js') }}" defer></script>
+</body>
+</html>

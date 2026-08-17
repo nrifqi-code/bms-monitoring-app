@@ -1,0 +1,74 @@
+{% set page_title = 'Alarm Center' %}
+{% set page_subtitle = 'Alarm aktif dan acknowledgement' %}
+{% set active_page = 'alarm_center' %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BMS &mdash; Alarm Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { mono: ['Consolas', 'Courier New', 'monospace'] }
+      }}
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden font-sans">
+
+  {% include 'partials/sidebar.html' %}
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div id="error-banner"
+      class="hidden bg-amber-50 border-b border-amber-200 px-5 py-2
+             flex items-center gap-2 text-sm text-amber-700">
+      <span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+      <span id="error-message">Koneksi ke server bermasalah...</span>
+    </div>
+
+    {% include 'partials/topbar.html' %}
+
+    <main class="flex-1 overflow-y-auto p-5">
+      <div x-data="{ soundOn: true, severity: 'all' }">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="font-bold text-gray-900">
+              <span class="font-mono" id="active-alarm-total">0</span> ACTIVE ALARMS
+            </div>
+            <div class="font-mono text-xs text-gray-400" id="alarm-last-update">-</div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-gray-300 rounded p-3 flex items-center gap-3 mb-4">
+          <button @click="soundOn = !soundOn"
+            class="text-sm text-gray-700 hover:text-blue-600 transition-colors" type="button">
+            <span x-show="soundOn">&#9679; Sound ON</span>
+            <span x-show="!soundOn">&#9675; Sound OFF</span>
+          </button>
+          <select x-model="severity" @change="filterAlarms(severity)"
+            class="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white text-gray-700">
+            <option value="all">All severity</option>
+            <option value="Critical">Critical</option>
+            <option value="Warning">Warning</option>
+          </select>
+          <button onclick="acknowledgeAll()"
+            class="ml-auto border border-blue-600 text-blue-600 rounded px-3 py-1.5 text-sm hover:bg-blue-50 transition-colors"
+            type="button">
+            Acknowledge All
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-2" id="alarm-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/alarm-center.js') }}" defer></script>
+</body>
+</html>

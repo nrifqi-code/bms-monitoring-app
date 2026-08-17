@@ -1,0 +1,257 @@
+{% set page_title = 'Realtime' %}
+{% set page_subtitle = 'Live monitoring battery pack' %}
+{% set active_page = 'realtime' %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BMS &mdash; Realtime</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { mono: ['Consolas', 'Courier New', 'monospace'] }
+      }}
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden font-sans">
+
+  {% include 'partials/sidebar.html' %}
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div id="error-banner"
+      class="hidden bg-amber-50 border-b border-amber-200 px-5 py-2
+             flex items-center gap-2 text-sm text-amber-700">
+      <span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+      <span id="error-message">Koneksi ke server bermasalah...</span>
+    </div>
+
+    {% include 'partials/topbar.html' %}
+
+    <main class="flex-1 overflow-y-auto p-5">
+      <div class="flex flex-col gap-4">
+        <section class="grid grid-cols-5 gap-2">
+          <div class="bg-white border border-gray-300 rounded p-4 relative min-h-[112px]">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">VOLTAGE</div>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="rt-voltage">0.0</span>
+              <span class="font-mono text-sm text-gray-500">V</span>
+            </div>
+            <canvas id="spark-voltage" width="60" height="24" class="absolute bottom-3 right-3 opacity-70"></canvas>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4 relative min-h-[112px]">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">CURRENT</div>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="rt-current">0.0</span>
+              <span class="font-mono text-sm text-gray-500">A</span>
+            </div>
+            <canvas id="spark-current" width="60" height="24" class="absolute bottom-3 right-3 opacity-70"></canvas>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4 relative min-h-[112px]">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">SOC</div>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="rt-soc">0.0</span>
+              <span class="font-mono text-sm text-gray-500">%</span>
+            </div>
+            <canvas id="spark-soc" width="60" height="24" class="absolute bottom-3 right-3 opacity-70"></canvas>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4 relative min-h-[112px]">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">SOH</div>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="rt-soh">0.0</span>
+              <span class="font-mono text-sm text-gray-500">%</span>
+            </div>
+            <canvas id="spark-soh" width="60" height="24" class="absolute bottom-3 right-3 opacity-70"></canvas>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4 relative min-h-[112px]">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">TEMPERATURE</div>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="rt-temp">0.0</span>
+              <span class="font-mono text-sm text-gray-500">&deg;C</span>
+            </div>
+            <canvas id="spark-temp" width="60" height="24" class="absolute bottom-3 right-3 opacity-70"></canvas>
+          </div>
+        </section>
+
+        <section class="bg-white border border-gray-300 rounded p-4" x-data="{ tab: 'voltage' }">
+          <div class="flex items-center gap-3 pb-2 border-b border-gray-100 mb-3">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">LIVE TREND</div>
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <div class="flex items-center gap-3 text-xs text-gray-400">
+              <button data-trend-range="5m" onclick="setTrendRange('5m')" class="text-blue-600 border-b-2 border-blue-600 font-semibold pb-1" type="button">5m</button>
+              <button data-trend-range="30m" onclick="setTrendRange('30m')" class="text-gray-400 hover:text-gray-600 pb-1" type="button">30m</button>
+              <button data-trend-range="1h" onclick="setTrendRange('1h')" class="text-gray-400 hover:text-gray-600 pb-1" type="button">1h</button>
+              <button data-trend-range="6h" onclick="setTrendRange('6h')" class="text-gray-400 hover:text-gray-600 pb-1" type="button">6h</button>
+              <button data-trend-range="24h" onclick="setTrendRange('24h')" class="text-gray-400 hover:text-gray-600 pb-1" type="button">24h</button>
+            </div>
+            <div class="ml-auto flex items-center gap-5">
+              <button @click="tab = 'voltage'; switchChart('voltage')"
+                :class="tab === 'voltage'
+                  ? 'text-blue-600 border-b-2 border-blue-600 font-semibold'
+                  : 'text-gray-400 hover:text-gray-600'"
+                class="text-sm pb-1 transition-colors" type="button">
+                Voltage
+              </button>
+              <button @click="tab = 'current'; switchChart('current')"
+                :class="tab === 'current'
+                  ? 'text-amber-600 border-b-2 border-amber-600 font-semibold'
+                  : 'text-gray-400 hover:text-gray-600'"
+                class="text-sm pb-1 transition-colors" type="button">
+                Current
+              </button>
+              <button @click="tab = 'temp'; switchChart('temp')"
+                :class="tab === 'temp'
+                  ? 'text-red-600 border-b-2 border-red-600 font-semibold'
+                  : 'text-gray-400 hover:text-gray-600'"
+                class="text-sm pb-1 transition-colors" type="button">
+                Temp
+              </button>
+              <span class="font-mono text-lg font-bold" id="chart-current-val"
+                :class="tab === 'voltage' ? 'text-blue-600' :
+                        tab === 'current' ? 'text-amber-600' : 'text-red-600'">
+                0.0 V
+              </span>
+            </div>
+          </div>
+          <div class="h-[180px]">
+            <canvas id="live-chart"></canvas>
+          </div>
+        </section>
+
+        <section class="grid grid-cols-5 gap-4">
+          <div class="col-span-2 bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100 mb-3">
+              LIVE STATUS
+            </div>
+            <div class="space-y-0">
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Charging Status</span>
+                <span class="flex items-center gap-2"><span class="inline-block w-2 h-2 rounded-full bg-green-500"></span><span class="font-mono text-sm text-gray-900" id="status-charging">-</span></span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Balancer</span>
+                <span class="flex items-center gap-2"><span class="inline-block w-2 h-2 rounded-full bg-green-500"></span><span class="font-mono text-sm text-gray-900" id="status-balancer">-</span></span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">MOSFET</span>
+                <span class="flex items-center gap-2"><span class="inline-block w-2 h-2 rounded-full bg-green-500"></span><span class="font-mono text-sm text-gray-900" id="status-mosfet">-</span></span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Communication</span>
+                <span class="flex items-center gap-2"><span class="inline-block w-2 h-2 rounded-full bg-green-500"></span><span class="font-mono text-sm text-gray-900" id="status-communication">-</span></span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Heater</span>
+                <span class="flex items-center gap-2"><span class="inline-block w-2 h-2 rounded-full bg-gray-400"></span><span class="font-mono text-sm text-gray-900" id="status-heater">-</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-3 flex flex-col gap-4">
+            <div class="bg-white border border-gray-300 rounded p-4">
+              <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100 mb-3">
+                CONNECTION
+              </div>
+              <div class="grid grid-cols-2 gap-x-6">
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">COM Port</span>
+                  <span class="font-mono text-sm text-gray-900" id="conn-port">-</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">Baud Rate</span>
+                  <span class="font-mono text-sm text-gray-900" id="conn-baud">-</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">Protocol</span>
+                  <span class="font-mono text-sm text-gray-900" id="conn-protocol">-</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">Refresh</span>
+                  <span class="font-mono text-sm text-gray-900" id="conn-refresh">-</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">Last Update</span>
+                  <span class="font-mono text-sm text-gray-900" id="conn-last-update">-</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-gray-300 rounded p-4">
+              <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100 mb-3">
+                SYSTEM
+              </div>
+              <div class="grid grid-cols-2 gap-x-6">
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">Firmware</span>
+                  <span class="font-mono text-sm text-gray-900" id="sys-firmware">-</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">Hardware</span>
+                  <span class="font-mono text-sm text-gray-900" id="sys-hardware">-</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">Serial Number</span>
+                  <span class="font-mono text-sm text-gray-900" id="sys-serial">-</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span class="text-sm text-gray-500">Uptime</span>
+                  <span class="font-mono text-sm text-green-600" id="sys-uptime">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-gray-50 rounded p-3 border border-gray-200">
+          <div class="grid grid-cols-5 gap-4 items-center">
+            <div class="flex items-center gap-3">
+              <canvas id="mini-voltage" width="72" height="28"></canvas>
+              <div>
+                <div class="text-[9px] text-gray-400 uppercase tracking-wide">Voltage</div>
+                <div class="font-mono text-sm font-bold text-blue-600" id="last-voltage">0.0 V</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <canvas id="mini-current" width="72" height="28"></canvas>
+              <div>
+                <div class="text-[9px] text-gray-400 uppercase tracking-wide">Current</div>
+                <div class="font-mono text-sm font-bold text-amber-600" id="last-current">0.0 A</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <canvas id="mini-temp" width="72" height="28"></canvas>
+              <div>
+                <div class="text-[9px] text-gray-400 uppercase tracking-wide">Temp</div>
+                <div class="font-mono text-sm font-bold text-red-600" id="last-temp">0.0 C</div>
+              </div>
+            </div>
+            <div>
+              <div class="text-[9px] text-gray-400 uppercase tracking-wide">Refresh Interval</div>
+              <div class="font-mono text-sm font-bold text-gray-900" id="last-refresh">1000 ms</div>
+            </div>
+            <div>
+              <div class="text-[9px] text-gray-400 uppercase tracking-wide">Last Update</div>
+              <div class="font-mono text-sm font-bold text-gray-900" id="last-update">-</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/realtime.js') }}" defer></script>
+</body>
+</html>

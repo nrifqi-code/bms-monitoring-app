@@ -95,11 +95,11 @@
             <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-3">
               <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">VOLTAGE TREND</div>
               <div class="flex items-center gap-4 text-xs">
-                <button class="text-blue-600 border-b-2 border-blue-600 font-semibold pb-1" type="button">5m</button>
-                <button class="text-gray-400 hover:text-gray-600 pb-1" type="button">30m</button>
-                <button class="text-gray-400 hover:text-gray-600 pb-1" type="button">1h</button>
-                <button class="text-gray-400 hover:text-gray-600 pb-1" type="button">6h</button>
-                <button class="text-gray-400 hover:text-gray-600 pb-1" type="button">24h</button>
+                <button data-trend-range="5m" onclick="setTrendRange('5m')" class="text-blue-600 border-b-2 border-blue-600 font-semibold pb-1" type="button">5m</button>
+                <button data-trend-range="30m" onclick="setTrendRange('30m')" class="text-gray-400 hover:text-gray-600 pb-1" type="button">30m</button>
+                <button data-trend-range="1h" onclick="setTrendRange('1h')" class="text-gray-400 hover:text-gray-600 pb-1" type="button">1h</button>
+                <button data-trend-range="6h" onclick="setTrendRange('6h')" class="text-gray-400 hover:text-gray-600 pb-1" type="button">6h</button>
+                <button data-trend-range="24h" onclick="setTrendRange('24h')" class="text-gray-400 hover:text-gray-600 pb-1" type="button">24h</button>
               </div>
             </div>
             <div class="h-[220px]">

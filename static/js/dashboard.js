@@ -1,4 +1,14 @@
 let voltageChart;
+let trendRange = '5m';
+const voltageHistory = [];
+
+const RANGE_MS = {
+  '5m': 5 * 60 * 1000,
+  '30m': 30 * 60 * 1000,
+  '1h': 60 * 60 * 1000,
+  '6h': 6 * 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+};
 
 function setText(id, value) {
   const el = document.getElementById(id);
@@ -76,25 +86,39 @@ function initChart() {
   });
 }
 
-function updateChart(value) {
+function renderChart() {
   if (!voltageChart) return;
 
-  const labels = voltageChart.data.labels;
-  const values = voltageChart.data.datasets[0].data;
-  labels.push(new Date().toLocaleTimeString('id-ID', {
+  const cutoff = Date.now() - RANGE_MS[trendRange];
+  const visible = voltageHistory.filter(point => point.time >= cutoff);
+  voltageChart.data.labels = visible.map(point => new Date(point.time).toLocaleTimeString('id-ID', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: false,
   }));
-  values.push(value);
-
-  if (labels.length > 100) {
-    labels.shift();
-    values.shift();
-  }
+  voltageChart.data.datasets[0].data = visible.map(point => point.value);
 
   voltageChart.update('none');
+}
+
+function setTrendRange(range) {
+  trendRange = range;
+  document.querySelectorAll('[data-trend-range]').forEach(button => {
+    const active = button.dataset.trendRange === range;
+    button.classList.toggle('text-blue-600', active);
+    button.classList.toggle('border-b-2', active);
+    button.classList.toggle('font-semibold', active);
+    button.classList.toggle('text-gray-400', !active);
+  });
+  renderChart();
+}
+
+function updateChart(value) {
+  voltageHistory.push({ time: Date.now(), value });
+  const cutoff = Date.now() - RANGE_MS['24h'];
+  while (voltageHistory.length && voltageHistory[0].time < cutoff) voltageHistory.shift();
+  renderChart();
 }
 
 function updateBattery(data) {
