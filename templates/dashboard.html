@@ -1,0 +1,182 @@
+{% set page_title = 'Dashboard' %}
+{% set page_subtitle = 'Ringkasan kondisi battery pack' %}
+{% set active_page = 'dashboard' %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BMS &mdash; Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { mono: ['Consolas', 'Courier New', 'monospace'] }
+      }}
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden font-sans">
+
+  {% include 'partials/sidebar.html' %}
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div id="error-banner"
+      class="hidden bg-amber-50 border-b border-amber-200 px-5 py-2
+             flex items-center gap-2 text-sm text-amber-700">
+      <span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+      <span id="error-message">Koneksi ke server bermasalah...</span>
+    </div>
+
+    {% include 'partials/topbar.html' %}
+
+    <main class="flex-1 overflow-y-auto p-5">
+      <div class="flex flex-col gap-4">
+        <section class="grid grid-cols-6 gap-2">
+          <div class="bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">SOC</div>
+            <div class="flex items-baseline gap-1 mb-2">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="val-soc">0.0</span>
+              <span class="font-mono text-sm text-gray-500">%</span>
+            </div>
+            <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-1 bg-green-500 rounded-full transition-all duration-500" id="bar-soc"></div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">PACK VOLTAGE</div>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="val-voltage">0.0</span>
+              <span class="font-mono text-sm text-gray-500">V</span>
+            </div>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">CURRENT</div>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="val-current">0.0</span>
+              <span class="font-mono text-sm text-gray-500">A</span>
+            </div>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">SOH</div>
+            <div class="flex items-baseline gap-1 mb-2">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="val-soh">0.0</span>
+              <span class="font-mono text-sm text-gray-500">%</span>
+            </div>
+            <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-1 bg-green-500 rounded-full transition-all duration-500" id="bar-soh"></div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">TEMPERATURE</div>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-3xl font-bold text-gray-900" id="val-temp">0.0</span>
+              <span class="font-mono text-sm text-gray-500">&deg;C</span>
+            </div>
+            <div class="text-xs text-red-600 mt-1 font-mono" id="temp-warning">-</div>
+          </div>
+
+          <div class="bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">STATUS</div>
+            <div class="font-mono text-2xl font-bold text-blue-600 uppercase" id="val-status">-</div>
+          </div>
+        </section>
+
+        <section class="grid grid-cols-5 gap-4">
+          <div class="col-span-3 bg-white border border-gray-300 rounded p-4">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-3">
+              <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">VOLTAGE TREND</div>
+              <div class="flex items-center gap-4 text-xs">
+                <button class="text-blue-600 border-b-2 border-blue-600 font-semibold pb-1" type="button">5m</button>
+                <button class="text-gray-400 hover:text-gray-600 pb-1" type="button">30m</button>
+                <button class="text-gray-400 hover:text-gray-600 pb-1" type="button">1h</button>
+                <button class="text-gray-400 hover:text-gray-600 pb-1" type="button">6h</button>
+                <button class="text-gray-400 hover:text-gray-600 pb-1" type="button">24h</button>
+              </div>
+            </div>
+            <div class="h-[220px]">
+              <canvas id="voltage-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="col-span-2 bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100 mb-3">
+              PACK INFO
+            </div>
+            <div class="space-y-0">
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Pack ID</span>
+                <span class="font-mono text-sm text-gray-900" id="info-pack-id">-</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Battery Model</span>
+                <span class="font-mono text-sm text-gray-900" id="info-model">-</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Nominal Capacity</span>
+                <span class="font-mono text-sm text-gray-900" id="info-capacity">-</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Nominal Voltage</span>
+                <span class="font-mono text-sm text-gray-900" id="info-nominal-voltage">-</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Cycle Count</span>
+                <span class="font-mono text-sm text-gray-900" id="info-cycle-count">-</span>
+              </div>
+              <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <span class="text-sm text-gray-500">Manufacturer</span>
+                <span class="font-mono text-sm text-gray-900" id="info-manufacturer">-</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid grid-cols-5 gap-4">
+          <div class="col-span-2 bg-white border border-gray-300 rounded p-4">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-3">
+              <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">RECENT ALARMS</div>
+              <a href="{{ url_for('alarm_center') }}" class="text-xs text-blue-600 hover:text-blue-700">view all &rarr;</a>
+            </div>
+            <div class="space-y-2" id="recent-alarms"></div>
+          </div>
+
+          <div class="col-span-3 bg-white border border-gray-300 rounded p-4">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100 mb-3">
+              PACK SUMMARY
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 rounded p-3">
+                <div class="text-[9px] text-gray-400 uppercase tracking-wide">Total Cells</div>
+                <div class="font-mono text-2xl font-bold text-gray-900" id="sum-cells">0</div>
+              </div>
+              <div class="bg-gray-50 rounded p-3">
+                <div class="text-[9px] text-gray-400 uppercase tracking-wide">Max Cell V</div>
+                <div class="font-mono text-2xl font-bold text-blue-600" id="sum-max">0.00V</div>
+              </div>
+              <div class="bg-gray-50 rounded p-3">
+                <div class="text-[9px] text-gray-400 uppercase tracking-wide">Min Cell V</div>
+                <div class="font-mono text-2xl font-bold text-red-600" id="sum-min">0.00V</div>
+              </div>
+              <div class="bg-gray-50 rounded p-3">
+                <div class="text-[9px] text-gray-400 uppercase tracking-wide">Voltage Diff</div>
+                <div class="font-mono text-2xl font-bold text-amber-600" id="sum-diff">0.00V</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<aside class="w-[220px] flex-shrink-0 flex flex-col h-screen"
+  style="background: linear-gradient(to bottom,
+    #112244 0%, #0D4455 40%, #0B6E6E 75%, #12897A 100%)">
+
+  <div class="flex items-center gap-3 px-4 py-5 border-b border-white/10">
+    <div class="w-9 h-9 rounded-full flex items-center justify-center
+                text-white font-bold text-sm flex-shrink-0"
+      style="background: linear-gradient(135deg, #43A047, #00BCD4)">SR</div>
+    <div>
+      <div class="text-white font-bold text-[11px] leading-tight tracking-wide">
+        SUMBER REJEKI
+      </div>
+      <div class="text-white/60 text-[10px]">ENERGY</div>
+    </div>
+  </div>
+
+  <nav class="flex-1 px-2 py-3 space-y-0.5">
+    <a href="{{ url_for('dashboard') }}"
+      class="flex items-center px-3 py-2.5 rounded text-sm w-full transition-colors
+             {% if active_page == 'dashboard' %}
+             bg-white/10 border-l-2 border-cyan-400 text-white font-semibold
+             {% else %}
+             text-white/55 hover:bg-white/[0.06] hover:text-white
+             {% endif %}">
+      Dashboard
+    </a>
+    <a href="{{ url_for('realtime') }}"
+      class="flex items-center px-3 py-2.5 rounded text-sm w-full transition-colors
+             {% if active_page == 'realtime' %}
+             bg-white/10 border-l-2 border-cyan-400 text-white font-semibold
+             {% else %}
+             text-white/55 hover:bg-white/[0.06] hover:text-white
+             {% endif %}">
+      Realtime
+    </a>
+    <a href="{{ url_for('battery_status') }}"
+      class="flex items-center px-3 py-2.5 rounded text-sm w-full transition-colors
+             {% if active_page == 'battery_status' %}
+             bg-white/10 border-l-2 border-cyan-400 text-white font-semibold
+             {% else %}
+             text-white/55 hover:bg-white/[0.06] hover:text-white
+             {% endif %}">
+      Battery Status
+    </a>
+    <a href="{{ url_for('history') }}"
+      class="flex items-center px-3 py-2.5 rounded text-sm w-full transition-colors
+             {% if active_page == 'history' %}
+             bg-white/10 border-l-2 border-cyan-400 text-white font-semibold
+             {% else %}
+             text-white/55 hover:bg-white/[0.06] hover:text-white
+             {% endif %}">
+      History
+    </a>
+    <a href="{{ url_for('alarm_center') }}"
+      class="flex items-center px-3 py-2.5 rounded text-sm w-full transition-colors
+             {% if active_page == 'alarm_center' %}
+             bg-white/10 border-l-2 border-cyan-400 text-white font-semibold
+             {% else %}
+             text-white/55 hover:bg-white/[0.06] hover:text-white
+             {% endif %}">
+      Alarm Center
+    </a>
+    <a href="{{ url_for('settings') }}"
+      class="flex items-center px-3 py-2.5 rounded text-sm w-full transition-colors
+             {% if active_page == 'settings' %}
+             bg-white/10 border-l-2 border-cyan-400 text-white font-semibold
+             {% else %}
+             text-white/55 hover:bg-white/[0.06] hover:text-white
+             {% endif %}">
+      Settings
+    </a>
+  </nav>
+
+  <div class="px-4 py-3 border-t border-white/10">
+    <div class="text-white/35 text-[9px] uppercase tracking-widest mb-2">
+      Connection
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="font-mono text-white text-sm font-semibold" id="sidebar-port">COM3</span>
+      <span class="w-2 h-2 rounded-full flex-shrink-0" id="sidebar-dot"
+            style="background:#16A34A"></span>
+      <span class="text-white/60 text-xs" id="sidebar-status">Connected</span>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 px-4 py-4 border-t border-white/10">
+    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center
+                justify-center text-white text-sm font-semibold flex-shrink-0">T</div>
+    <div>
+      <div class="text-white text-sm font-semibold leading-tight">Technician</div>
+      <div class="text-white/55 text-xs">Maintenance Team</div>
+    </div>
+  </div>
+</aside>
