@@ -1,5 +1,5 @@
 let alarms = [];
-let severityFilter = 'all';
+let severityFilter = "all";
 const acknowledgedIds = new Set();
 
 function setText(id, value) {
@@ -8,13 +8,13 @@ function setText(id, value) {
 }
 
 function startClock() {
-  const el = document.getElementById('clock');
+  const el = document.getElementById("clock");
   if (!el) return;
   const tick = () => {
-    el.textContent = new Date().toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
+    el.textContent = new Date().toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
       hour12: false,
     });
   };
@@ -23,17 +23,19 @@ function startClock() {
 }
 
 function badgeClass(severity) {
-  return severity === 'Critical'
-    ? 'border-red-300 bg-red-50 text-red-600'
-    : 'border-amber-300 bg-amber-50 text-amber-600';
+  return severity === "Critical"
+    ? "border-red-300 bg-red-50 text-red-600"
+    : "border-amber-300 bg-amber-50 text-amber-600";
 }
 
 function alarmMarkup(alarm) {
   const ack = acknowledgedIds.has(alarm.id);
-  const border = alarm.severity === 'Critical' ? 'border-l-red-600' : 'border-l-amber-500';
-  const button = alarm.severity === 'Critical'
-    ? 'border-red-400 text-red-600 hover:bg-red-50'
-    : 'border-amber-400 text-amber-600 hover:bg-amber-50';
+  const border =
+    alarm.severity === "Critical" ? "border-l-red-600" : "border-l-amber-500";
+  const button =
+    alarm.severity === "Critical"
+      ? "border-red-400 text-red-600 hover:bg-red-50"
+      : "border-amber-400 text-amber-600 hover:bg-amber-50";
 
   if (ack) {
     return `
@@ -78,14 +80,15 @@ function alarmMarkup(alarm) {
 }
 
 function renderAlarms() {
-  const list = document.getElementById('alarm-list');
+  const list = document.getElementById("alarm-list");
   if (!list) return;
 
-  const shown = severityFilter === 'all'
-    ? alarms
-    : alarms.filter(alarm => alarm.severity === severityFilter);
+  const shown =
+    severityFilter === "all"
+      ? alarms
+      : alarms.filter((alarm) => alarm.severity === severityFilter);
   list.innerHTML = shown.length
-    ? shown.map(alarmMarkup).join('')
+    ? shown.map(alarmMarkup).join("")
     : '<div class="bg-white border border-gray-300 rounded p-4 text-sm text-gray-500">No active alarms</div>';
 }
 
@@ -102,24 +105,33 @@ async function acknowledgeAlarm(id) {
 
 async function acknowledgeAll() {
   await api.acknowledgeAllAlarms();
-  alarms.forEach(alarm => acknowledgedIds.add(alarm.id));
+  alarms.forEach((alarm) => acknowledgedIds.add(alarm.id));
   renderAlarms();
 }
 
 async function refresh() {
   alarms = await api.getActiveAlarms();
-  setText('active-alarm-total', alarms.filter(alarm => !acknowledgedIds.has(alarm.id)).length);
-  setText('alarm-count', alarms.filter(alarm => !acknowledgedIds.has(alarm.id)).length);
-  setText('alarm-last-update', new Date().toLocaleTimeString('id-ID', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }));
+  setText(
+    "active-alarm-total",
+    alarms.filter((alarm) => !acknowledgedIds.has(alarm.id)).length,
+  );
+  setText(
+    "alarm-count",
+    alarms.filter((alarm) => !acknowledgedIds.has(alarm.id)).length,
+  );
+  setText(
+    "alarm-last-update",
+    new Date().toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }),
+  );
   renderAlarms();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   startClock();
   refresh();
   setInterval(refresh, 3000);
